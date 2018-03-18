@@ -1,0 +1,248 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Medusa</title>
+  <!-- <link rel="stylesheet" href="bower_components/tracking/examples/assets/demo.css"> -->
+
+
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+  <!-- Bootstrap CSS -->
+  <link rel="stylesheet" href="node_modules/bootstrap/dist/css/bootstrap.min.css"  crossorigin="anonymous">
+
+
+
+
+  <style>
+  video, canvas {
+    margin-left: 100px;
+    margin-top: 35px;
+    position: absolute;
+  }
+
+  .ac {
+    display: none;
+  }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+  
+     <div class="demo-frame">
+    <div class="demo-container">
+        <video id="video" width="600" height="450" preload autoplay loop muted ></video>
+        <canvas id="canvas" width="600" height="450"></canvas>  
+    </div>
+  </div>
+  </div>
+
+
+  <div class="demo-title">
+    <p>
+        <a href="https://satecnologia.com.br" target="_parent">SA Tecnologia</a> － Controle de acesso, seguindo normativas de segurança.</p>
+  </div>
+
+  <div class="demo-frame">
+    <div class="demo-container">
+        <video id="video" width="600" height="450" preload autoplay loop muted ></video>
+        <canvas id="canvas" width="600" height="450"></canvas>
+          
+    </div>
+  </div>
+
+
+  
+  <br>
+  <br>
+  <br>
+  <br> <br>
+  <br>
+  <br>
+  <br>
+    
+  <br>
+  <br>
+  <br>
+  <br> <br>
+  <br>
+  <br>
+  <br>
+  
+  <hr/>
+  <h1 id="texto"></h1>
+  <img id="imagem" />
+
+
+  <script src="js/jquery.js"></script>
+  <script src="bower_components/tracking/build/tracking-min.js"></script>
+  <script src="bower_components/tracking/build/data/face-min.js"></script>
+  
+  <script src="bower_components/dat-gui/build/dat.gui.min.js"></script>
+  <script src="bower_components/tracking/examples/assets/color_camera_gui.js"></script>
+  <script src="bower_components/tracking/examples/assets/stats.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.0.4/socket.io.slim.js"></script>
+
+  <script>
+    var api = 'https://medusa.satecnologia.com.br/api/v1';
+    //var api = 'http://10.98.0.100:3000/api/v1';
+    
+    var socket;
+
+    var xFace;
+    var xHelmet;
+    var waitTime;
+    var inHead = true;
+    
+
+    function sendNewEvent(data){
+      socket.emit('newEvent', {
+        open: data
+      })
+    }
+
+    function openTheDoor() {
+      $('#texto').text('Verificando uniforme... Aguarde...')
+      waitTime = setTimeout(function(){
+        
+        $(function(){
+          var video, $output;
+          var scale = 0.25;
+
+              video = $("#video").get(0);
+
+              var canvas = document.createElement("canvas");
+                  canvas.width = video.videoWidth * scale;
+                  canvas.height = video.videoHeight * scale;
+                  canvas.getContext('2d')
+                        .drawImage(video, 0, 0, canvas.width, canvas.height);
+              var img = canvas.toDataURL()
+             
+
+              $('#imagem').attr('src', img);
+
+              $.post(api + '/authorization', {
+                status: true,
+                avatar: img
+              })
+
+        })
+
+
+        console.log('ABRE A PORTA MARIQUINHA!')
+        $('#texto').text('PORTA ABERTA, SIGA COM ATENÇÃO E BOM TRABALHO.')
+
+        sendNewEvent();
+        }, 3000);
+    }
+
+    
+
+    $(function(){
+      socket = io('http://10.98.0.101:3000');
+      socket.on('connection', function(client){
+      client.on('event', function(data){});
+      client.on('disconnect', function(){});
+    });
+
+
+      var video = document.getElementById('video');
+      var canvas = document.getElementById('canvas');
+      var context = canvas.getContext('2d');
+
+      var tracker = new tracking.ColorTracker(['yellow']);
+
+      tracking.track('#video', tracker, { camera: true });
+      tracker.on('track', function(event) {
+
+
+   
+
+        if (event.data.length === 0) {
+            //console.log('nao')
+        } else {
+          context.clearRect(0, 0, canvas.width, canvas.height);
+          event.data.forEach(function(rect) {
+            //console.log(rect.color)
+            if (rect.color === 'yellow') {
+              //rect.color = tracker.customColor;
+              //console.log('amarelo')
+              // sendNewEvent(1);
+            } 
+            else {
+              //console.log('nao')
+            }
+            context.strokeStyle = rect.color;
+            context.strokeRect(rect.x, rect.y, rect.width, rect.height);
+            context.font = '11px Helvetica';
+            context.fillStyle = "#fff";
+
+            //console.log(rect.x);
+            context.fillText('x: ' + rect.x + 'px', rect.x + rect.width + 5, rect.y + 11);
+            context.fillText('y: ' + rect.y + 'px', rect.x + rect.width + 5, rect.y + 22);
+
+            xHelmet = { x : rect.x, y : rect.y }
+          
+          });
+        }
+      });
+      //console.log(tracker)
+      initGUIControllers(tracker);
+
+
+      var faceTracker = new tracking.ObjectTracker('face');
+        faceTracker.setInitialScale(4);
+        faceTracker.setStepSize(2);
+        faceTracker.setEdgesDensity(0.1);
+        tracking.track('#video', faceTracker);
+        faceTracker.on('track', function(event) {
+      
+        //context.clearRect(0, 0, canvas.width, canvas.height);
+        event.data.forEach(function(rect) {
+
+          xFace = { x : rect.x, y : rect.y }
+          // context.strokeStyle = '#a64ceb';
+          // context.strokeRect(rect.x, rect.y, rect.width, rect.height);
+          // context.font = '11px Helvetica';
+          // context.fillStyle = "#fff";
+          // context.fillText('x: ' + rect.x + 'px', rect.x + rect.width + 5, rect.y + 11);
+          // context.fillText('y: ' + rect.y + 'px', rect.x + rect.width + 5, rect.y + 22);
+        });
+      });
+      var gui = new dat.GUI();
+        gui.add(faceTracker, 'edgesDensity', 0.1, 0.5).step(0.01);
+        gui.add(faceTracker, 'initialScale', 1.0, 10.0).step(0.1);
+        gui.add(faceTracker, 'stepSize', 1, 5).step(0.1);
+
+
+      setInterval(function(){
+
+          //console.log()
+        if( (typeof xFace != 'undefined') && (typeof xHelmet != 'undefined') ) { 
+          if(xFace.y > xHelmet.y) {
+            if(inHead) {
+              let test = xFace.x - xHelmet.x; 
+              if( !(test <= 10) && !(test >= 60) ) {
+                openTheDoor();
+
+              } 
+            } 
+            inHead = false;
+          } else {
+            clearTimeout(waitTime);
+            inHead = true;
+            //console.log('COLOQUE O CAPACETE NA CABEÇA SEU DESATENTO!  no balanço do bar.... ')
+            $('#texto').text('SEM ACESSO!! O USE EQUIPAMENTO ADEQUADO!')
+            //console.log('fora da cabeçaaaa')
+
+          }
+        }
+
+        
+      }, 20)
+    })
+  </script>
+</body>
+</html>
