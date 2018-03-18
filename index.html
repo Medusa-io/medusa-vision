@@ -22,38 +22,95 @@
     position: absolute;
   }
 
+  #box {
+    margin-left: 740px;
+    margin-top: 85px;
+    position: absolute;
+  }
+  #box ul {
+    margin-left: 10px;
+    font-size: 3em;
+    list-style-type: none;
+  }
+
+  .aprovado {
+    color: #42FF00;
+  }
+  .analisando {
+    color: #E2E2E2;
+  }
+
   .ac {
     display: none;
   }
+  *  {
+    margin:0;
+    padding:0;
+}
+
+html, body {height:100%;}
+
+.geral {
+    min-height:100%;
+    position:relative;
+    width:100%;
+}
+
+  .footer {
+      position:absolute;
+     
+      background: #000;
+      bottom:-15px;
+      width:100%;
+      color: #fff;
+  }
+  .footer p {
+    padding: 10px;
+    border-left: 1px solid #c2c2c2;
+    float: left;
+  }
+
+
   </style>
 </head>
 <body>
 
-  <div class="container">
+  <div class="geral">
   
      <div class="demo-frame">
-    <div class="demo-container">
-        <video id="video" width="600" height="450" preload autoplay loop muted ></video>
-        <canvas id="canvas" width="600" height="450"></canvas>  
+      <div class="demo-container">
+          <video id="video" width="600" height="450" preload autoplay loop muted ></video>
+          <canvas id="canvas" width="600" height="450"></canvas>  
+      </div>
     </div>
-  </div>
-  </div>
+
+    <div id="box">
+      <h3>Status: <span id="statusText"></span> </h3>
+
+      <ul>
+        <li id="capacete" class="aprovado"><svg style="width:24px;height:24px" viewBox="0 0 24 24">
+            <path d="M19,19H5V5H15V3H5C3.89,3 3,3.89 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V11H19M7.91,10.08L6.5,11.5L11,16L21,6L19.59,4.58L11,13.17L7.91,10.08Z" />
+         </svg> Capacete</li>
+      </ul>
+
+      <p>
+          <img id="imagem" />
+      </p>
+    </div>
+  
 
 
-  <div class="demo-title">
+  <div class="footer">
     <p>
-        <a href="https://satecnologia.com.br" target="_parent">SA Tecnologia</a> － Controle de acesso, seguindo normativas de segurança.</p>
+      <img src="img/logo.png" alt="" width="100">
+    </p>
+    <p>
+        Monitoramento de segurança.
+    </p>
+      
   </div>
 
-  <div class="demo-frame">
-    <div class="demo-container">
-        <video id="video" width="600" height="450" preload autoplay loop muted ></video>
-        <canvas id="canvas" width="600" height="450"></canvas>
-          
-    </div>
-  </div>
-
-
+</div>
   
   <br>
   <br>
@@ -72,8 +129,8 @@
   <br>
   
   <hr/>
-  <h1 id="texto"></h1>
-  <img id="imagem" />
+  
+  
 
 
   <script src="js/jquery.js"></script>
@@ -82,7 +139,7 @@
   
   <script src="bower_components/dat-gui/build/dat.gui.min.js"></script>
   <script src="bower_components/tracking/examples/assets/color_camera_gui.js"></script>
-  <script src="bower_components/tracking/examples/assets/stats.min.js"></script>
+  <!-- <script src="bower_components/tracking/examples/assets/stats.min.js"></script> -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.0.4/socket.io.slim.js"></script>
 
   <script>
@@ -95,9 +152,48 @@
     var xHelmet;
     var waitTime;
     var inHead = true;
-    
 
+    
+    
+    
+    function aprovardo(){
+      $(function(){
+        $('#statusText').text('Aprovado, liberando acesso..')
+        $('#capacete').removeClass('analisando')
+        $('#capacete').addClass('aprovado')
+      })
+    }
+
+
+    function acessoLiberado() {
+      $('#imagem').show()
+      $('#acessoLiberado').text('ACESSO LIBERADO! TENHA CUIDADO E BOM TRABALHO!')
+
+      setTimeout( function(){
+        $('#acessoLiberado').text('FECHANDO PORTA...')
+      },3000)
+
+      setTimeout( function(){
+        $('#acessoLiberado').text('PORTA FECHADA')
+      },4000)
+
+      setTimeout( function(){
+        $('#acessoLiberado').text()
+      },6000)
+      
+      
+    }
+
+    function analisando(){
+      $(function(){
+        $('#statusText').text('Analisando..')
+        $('#capacete').removeClass('aprovado')
+        $('#capacete').addClass('analisando')
+      })
+    }
+    
     function sendNewEvent(data){
+      acessoLiberado();
       socket.emit('newEvent', {
         open: data
       })
@@ -133,14 +229,29 @@
 
         console.log('ABRE A PORTA MARIQUINHA!')
         $('#texto').text('PORTA ABERTA, SIGA COM ATENÇÃO E BOM TRABALHO.')
+        aprovardo();
+        
+        setTimeout(function(){
+          
+            //console.log('COLOQUE O CAPACETE NA CABEÇA SEU DESATENTO!  no balanço do bar.... ')
+            $('#texto').text('SEM ACESSO!! O USE EQUIPAMENTO ADEQUADO!')
+         
+        },5000)
 
         sendNewEvent();
-        }, 3000);
+        }, 1000);
     }
+
+
 
     
 
     $(function(){
+
+      $('#imagem').hide()
+
+      analisando();
+
       socket = io('http://10.98.0.101:3000');
       socket.on('connection', function(client){
       client.on('event', function(data){});
@@ -222,24 +333,26 @@
           //console.log()
         if( (typeof xFace != 'undefined') && (typeof xHelmet != 'undefined') ) { 
           if(xFace.y > xHelmet.y) {
+           
             if(inHead) {
-              let test = xFace.x - xHelmet.x; 
-              if( !(test <= 10) && !(test >= 60) ) {
-                openTheDoor();
+              openTheDoor();
+              // let test = xFace.x - xHelmet.x; 
+              // if( !(test <= 10) && !(test >= 60) ) {
+              //   openTheDoor();
 
-              } 
+              // } 
             } 
             inHead = false;
           } else {
+            $('#imagem').hide()
+            analisando();
             clearTimeout(waitTime);
             inHead = true;
             //console.log('COLOQUE O CAPACETE NA CABEÇA SEU DESATENTO!  no balanço do bar.... ')
             $('#texto').text('SEM ACESSO!! O USE EQUIPAMENTO ADEQUADO!')
-            //console.log('fora da cabeçaaaa')
-
+            //console.log('fora da cabeçaaaa') 
           }
         }
-
         
       }, 20)
     })
